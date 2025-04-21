@@ -38,12 +38,12 @@ type FetchImageFillParams = Omit<FetchImageParams, "fileType"> & {
 };
 
 export class FigmaService {
-  private readonly apiKey: string;
   private readonly baseUrl = "https://api.figma.com/v1";
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
+  constructor(
+    private readonly apiKey: string,
+    private readonly variables?: Record<string, unknown>,
+  ) {}
 
   private async request<T>(endpoint: string): Promise<T> {
     if (typeof fetch !== "function") {
@@ -141,7 +141,7 @@ export class FigmaService {
       Logger.log(`Retrieving Figma file: ${fileKey} (depth: ${depth ?? "default"})`);
       const response = await this.request<GetFileResponse>(endpoint);
       Logger.log("Got response");
-      const simplifiedResponse = parseFigmaResponse(response);
+      const simplifiedResponse = parseFigmaResponse(response, this.variables);
       writeLogs("figma-raw.yml", response);
       writeLogs("figma-simplified.yml", simplifiedResponse);
       return simplifiedResponse;
@@ -156,7 +156,7 @@ export class FigmaService {
     const response = await this.request<GetFileNodesResponse>(endpoint);
     Logger.log("Got response from getNode, now parsing.");
     writeLogs("figma-raw.yml", response);
-    const simplifiedResponse = parseFigmaResponse(response);
+    const simplifiedResponse = parseFigmaResponse(response, this.variables);
     writeLogs("figma-simplified.yml", simplifiedResponse);
     return simplifiedResponse;
   }

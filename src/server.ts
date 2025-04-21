@@ -19,8 +19,8 @@ export class FigmaMcpServer {
   private transports: { [sessionId: string]: SSEServerTransport } = {};
   private httpServer: Server | null = null;
 
-  constructor(figmaApiKey: string) {
-    this.figmaService = new FigmaService(figmaApiKey);
+  constructor(figmaApiKey: string, variables?: Record<string, unknown>) {
+    this.figmaService = new FigmaService(figmaApiKey, variables);
     this.server = new McpServer(
       {
         name: "Figma MCP Server",

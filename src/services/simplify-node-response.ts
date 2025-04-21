@@ -48,6 +48,7 @@ type StyleTypes =
   | string;
 type GlobalVars = {
   styles: Record<StyleId, StyleTypes>;
+  variables?: Record<string, unknown>;
 };
 export interface SimplifiedDesign {
   name: string;
@@ -70,6 +71,7 @@ export interface SimplifiedNode {
   fills?: string;
   styles?: string;
   extraStyles?: Record<string, unknown>;
+  variables?: Record<string, unknown>;
   strokes?: string;
   effects?: string;
   opacity?: number;
@@ -114,11 +116,15 @@ export interface ColorValue {
 }
 
 // ---------------------- PARSING ----------------------
-export function parseFigmaResponse(data: GetFileResponse | GetFileNodesResponse): SimplifiedDesign {
+export function parseFigmaResponse(
+  data: GetFileResponse | GetFileNodesResponse,
+  variables?: Record<string, unknown>,
+): SimplifiedDesign {
   const { name, lastModified, thumbnailUrl } = data;
 
   let globalVars: GlobalVars = {
     styles: {},
+    variables,
   };
 
   let nodes: FigmaDocumentNode[];
@@ -140,7 +146,7 @@ export function parseFigmaResponse(data: GetFileResponse | GetFileNodesResponse)
     lastModified,
     thumbnailUrl: thumbnailUrl || "",
     nodes: simplifiedNodes,
-    globalVars,
+    globalVars: { styles: globalVars.styles },
   };
 }
 
@@ -228,6 +234,20 @@ function parseNode(
       const style = globalVars.styles[nodeId];
       return hasValue("name", style) ? style.name : style;
     });
+  }
+
+  // boundVariables
+  if (hasValue("boundVariables", n)) {
+    type VariableAlias = { type: "VARIABLE_ALIAS"; id: string };
+    const boundVariables = n.boundVariables as Record<string, VariableAlias | VariableAlias[]>;
+    const regex = /^VariableID:(\w+)\/.*$/;
+    console.log("boundVariables", boundVariables);
+    simplified.variables = mapValues(boundVariables, (variables) =>
+      [variables]
+        .flat()
+        .flatMap(({ id }) => regex.exec(id)?.[1] ?? [])
+        .flatMap((variableId) => globalVars.variables?.[variableId] ?? []),
+    );
   }
 
   // fills & strokes

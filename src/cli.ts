@@ -2,7 +2,8 @@
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "dotenv";
-import { resolve } from "path";
+import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { getServerConfig } from "./config.js";
 import { FigmaMcpServer } from "./server.js";
 
@@ -12,10 +13,14 @@ config({ path: resolve(process.cwd(), ".env") });
 export async function startServer(): Promise<void> {
   // Check if we're running in stdio mode (e.g., via CLI)
   const isStdioMode = process.env.NODE_ENV === "cli" || process.argv.includes("--stdio");
+  const variablesPath = process.env.FIGMA_VARIABLES_PATH;
+
+  if (variablesPath) console.log(`Loading variables from ${variablesPath}`);
+  const variables = variablesPath ? JSON.parse(readFileSync(variablesPath, "utf-8")) : undefined;
 
   const config = getServerConfig(isStdioMode);
 
-  const server = new FigmaMcpServer(config.figmaApiKey);
+  const server = new FigmaMcpServer(config.figmaApiKey, variables);
 
   if (isStdioMode) {
     const transport = new StdioServerTransport();
@@ -27,6 +32,7 @@ export async function startServer(): Promise<void> {
 }
 
 // If we're being executed directly (not imported), start the server
+console.log(process.argv);
 if (process.argv[1]) {
   startServer().catch((error) => {
     console.error("Failed to start server:", error);
