@@ -11,6 +11,7 @@ interface ServerConfig {
   configSources: {
     figmaApiKey: "cli" | "env";
     port: "cli" | "env" | "default";
+    variables: string | undefined;
   };
 }
 
@@ -47,6 +48,7 @@ export function getServerConfig(isStdioMode: boolean): ServerConfig {
     configSources: {
       figmaApiKey: "env",
       port: "default",
+      variables: process.env.FIGMA_VARIABLES_PATH
     },
   };
 
@@ -81,6 +83,7 @@ export function getServerConfig(isStdioMode: boolean): ServerConfig {
       `- FIGMA_API_KEY: ${maskApiKey(config.figmaApiKey)} (source: ${config.configSources.figmaApiKey})`,
     );
     console.log(`- PORT: ${config.port} (source: ${config.configSources.port})`);
+    console.log(`- Variables: (source: ${config.configSources.variables})`)
     console.log(); // Empty line for better readability
   }
 
